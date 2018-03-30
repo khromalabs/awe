@@ -1,0 +1,50 @@
+#!/usr/bin/php
+<?php
+
+/**
+ * AWE Framework
+ *
+ * @copyright Copyright (c) 2012-2018 Rubén Gómez Agudo (http://www.khromalabs\.com)
+ * @version $Id$
+ */
+
+require_once "jsv4/jsv4.php";
+require_once "jsv4/schema-store.php";
+
+if ($_SERVER['argc'] < 3) {
+    echo "Se esperaba: ".$_SERVER['argv'][0]." <app-schema> <validation-schema>\n\n";
+    exit;
+}
+
+$argv = & $_SERVER['argv'];
+
+for($i = 1; $i <= 2; $i++) {
+    if (!file_exists($argv[$i])) {
+        echo "Error: no existe el archivo " . $argv[$i] . "\n\n";
+        exit;
+    }
+}
+
+$data = json_decode(file_get_contents($argv[1]));
+$schema = json_decode(file_get_contents($argv[2]));
+
+$store = new SchemaStore();
+$url = "awe";
+$store->add($url, $schema);
+$schema = $store->get($url);
+
+$jsv4 = Jsv4::validate($data, $schema);
+
+if (sizeof($jsv4->errors) === 0) {
+    echo "No se produjeron errores\n\n";
+//    print_r($jsv4);
+} else {
+    echo "Se produjeron " . sizeof($jsv4->errors) . " errores (0 first element)";
+    foreach ($jsv4->errors as $key => $errors_item) {
+        echo "\n";
+        echo $key+1 . " - " . $errors_item->message . " at " .
+            $errors_item->dataPath;
+    }
+
+    echo "\n";
+}
